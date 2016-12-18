@@ -119,10 +119,11 @@ namespace TodoListClient
             }
 
             // Once the token has been returned by ADAL, add it to the http authorization header, before making the call to access the To Do list service.
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", result.AccessToken);
+            //httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", result.AccessToken);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(result.AccessTokenType, result.AccessToken);
 
             // Call the To Do list service.
-            HttpResponseMessage response = await httpClient.GetAsync(todoListBaseAddress + "/api/todolist");
+            HttpResponseMessage response = await httpClient.GetAsync(todoListBaseAddress + "api/todolist");
 
             if (response.IsSuccessStatusCode)
             {
@@ -130,9 +131,16 @@ namespace TodoListClient
                 // Read the response and databind to the GridView to display To Do items.
                 string s = await response.Content.ReadAsStringAsync();
                 JavaScriptSerializer serializer = new JavaScriptSerializer();
-                List<TodoItem> toDoArray = serializer.Deserialize<List<TodoItem>>(s);
+                try
+                {
+                    List<TodoItem> toDoArray = serializer.Deserialize<List<TodoItem>>(s);
+                    TodoList.ItemsSource = toDoArray.Select(t => new { t.Title });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Cannot deserialize {ex.Message}");
+                }
 
-                TodoList.ItemsSource = toDoArray.Select(t => new { t.Title });
             }
             else
             {
